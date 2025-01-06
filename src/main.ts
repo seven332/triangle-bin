@@ -3,11 +3,12 @@ function printNoWebGPU() {
 }
 
 async function main() {
-  const device = await (await navigator.gpu?.requestAdapter())?.requestDevice()
-  if (!device) {
+  const deviceOrNull = await (await navigator.gpu?.requestAdapter())?.requestDevice()
+  if (!deviceOrNull) {
     printNoWebGPU()
     return
   }
+  const device = deviceOrNull;
 
   const canvas = document.querySelector('canvas') as HTMLCanvasElement;
   const context = canvas.getContext('webgpu') as GPUCanvasContext;
@@ -69,21 +70,69 @@ fn triangle_bin_frag(in: Varyings) -> @location(0) vec4f {
       }],
     },
     primitive: {
-      topology: 'triangle-list',
+      topology: 'triangle-strip',
     },
   });
 
   const uniformBuffer = device.createBuffer({
-    size: 1024,
-    usage: GPUBufferUsage.UNIFORM,
+    size: 4,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
-  device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([1]));
 
   const storageBuffer = device.createBuffer({
-    size: 1024,
-    usage: GPUBufferUsage.STORAGE,
+    size: 4,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
   });
-  device.queue.writeBuffer(storageBuffer, 0, new Uint32Array([1024]));
+
+  const bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+      {
+        binding: 0,
+        resource: {
+          buffer: uniformBuffer,
+        },
+      },
+      {
+        binding: 1,
+        resource: {
+          buffer: storageBuffer,
+        },
+      },
+    ],
+  });
+
+  function frame() {
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+
+    device.queue.writeBuffer(storageBuffer, 0, new Uint32Array([0]));
+    device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([new Date().getTime() * 128 % (canvas.width * canvas.height)]));
+
+    const commandEncoder = device.createCommandEncoder();
+
+    const renderPassDescriptor: GPURenderPassDescriptor = {
+      colorAttachments: [
+        {
+          view: context.getCurrentTexture().createView(),
+          clearValue: [0, 0, 0, 0],
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
+    };
+
+    const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+    passEncoder.setPipeline(pipeline);
+    passEncoder.setBindGroup(0, bindGroup);
+    passEncoder.draw(4);
+    passEncoder.end();
+  
+    device.queue.submit([commandEncoder.finish()]);
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
 }
 
 main();
