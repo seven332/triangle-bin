@@ -102,6 +102,19 @@ fn triangle_bin_frag(in: Varyings) -> @location(0) vec4f {
     ],
   });
 
+  const input = document.getElementById('input') as HTMLInputElement;
+  function getSeconds() {
+    const value = parseInt(input.value);
+    return isNaN(value) ? 8 : value;
+  }
+  const inputValue = document.getElementById('input-value') as HTMLSpanElement;
+  let seconds = getSeconds();
+  inputValue.textContent = seconds.toString();
+  input.addEventListener('input', () => {
+    seconds = getSeconds();
+    inputValue.textContent = seconds.toString();
+  });
+
   function frame() {
     if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
       canvas.width = window.innerWidth
@@ -113,7 +126,7 @@ fn triangle_bin_frag(in: Varyings) -> @location(0) vec4f {
     }
 
     device.queue.writeBuffer(storageBuffer, 0, new Uint32Array([0]));
-    const cycle = 8 * 1000;
+    const cycle = seconds * 1000;
     const total = canvas.width * canvas.height
     const speed = Math.round(total / cycle)
     device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([new Date().getTime() * speed % total]));
