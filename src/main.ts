@@ -103,8 +103,14 @@ fn triangle_bin_frag(in: Varyings) -> @location(0) vec4f {
   });
 
   function frame() {
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+      context.configure({
+        device,
+        format: presentationFormat,
+      });
+    }
 
     device.queue.writeBuffer(storageBuffer, 0, new Uint32Array([0]));
     device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([new Date().getTime() * 128 % (canvas.width * canvas.height)]));
