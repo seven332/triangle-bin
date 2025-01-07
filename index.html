@@ -9,11 +9,20 @@
     <div>
       <span id="text"></span>
     </div>
-    <canvas id="canvas"></canvas>
+    <div>
+      <canvas id="canvas"></canvas>
+    </div>
     <div style="position: absolute; top: 0; left: 0;">
-      <input id="input" type="range" min="1" max="64" value="8"/>
-      <span id="input-value"></span>
-      <span>seconds per cycle</span>
+      <div>
+        <input id="seconds" type="range" min="1" max="64" value="8"/>
+        <span id="seconds-value"></span>
+        <span>seconds per cycle</span>
+      </div>
+      <div>
+        <input id="percent" type="range" min="1" max="100" value="100"/>
+        <span id="percent-value"></span>
+        <span>% canvas size</span>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

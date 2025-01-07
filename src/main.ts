@@ -2,6 +2,28 @@ function printNoWebGPU() {
   document.getElementById('text')!.textContent = 'WebGPU is not supported on this browser.'
 }
 
+interface InputValue {
+  value: number;
+}
+
+function inputValue(id: string, valueId: string, defaultValue: number) {
+  const inputElement = document.getElementById(id) as HTMLInputElement;
+  function getValue() {
+    const value = parseInt(inputElement.value);
+    return isNaN(value) ? defaultValue : value;
+  }
+  const valueElement = document.getElementById(valueId) as HTMLSpanElement;
+  let value: InputValue = {
+    value: getValue(),
+  };
+  valueElement.textContent = value.value.toString();
+  inputElement.addEventListener('input', () => {
+    value.value = getValue();
+    valueElement.textContent = value.value.toString();
+  });
+  return value
+}
+
 async function main() {
   const deviceOrNull = await (await navigator.gpu?.requestAdapter())?.requestDevice()
   if (!deviceOrNull) {
@@ -102,23 +124,15 @@ fn triangle_bin_frag(in: Varyings) -> @location(0) vec4f {
     ],
   });
 
-  const input = document.getElementById('input') as HTMLInputElement;
-  function getSeconds() {
-    const value = parseInt(input.value);
-    return isNaN(value) ? 8 : value;
-  }
-  const inputValue = document.getElementById('input-value') as HTMLSpanElement;
-  let seconds = getSeconds();
-  inputValue.textContent = seconds.toString();
-  input.addEventListener('input', () => {
-    seconds = getSeconds();
-    inputValue.textContent = seconds.toString();
-  });
+  let seconds = inputValue('seconds', 'seconds-value', 8);
+  let percent = inputValue('percent', 'percent-value', 100);
 
   function frame() {
-    if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+    const width = Math.round(window.innerWidth * percent.value / 100);
+    const height = Math.round(window.innerHeight * percent.value / 100);
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width
+      canvas.height = height
       context.configure({
         device,
         format: presentationFormat,
@@ -126,8 +140,8 @@ fn triangle_bin_frag(in: Varyings) -> @location(0) vec4f {
     }
 
     device.queue.writeBuffer(storageBuffer, 0, new Uint32Array([0]));
-    const cycle = seconds * 1000;
-    const total = canvas.width * canvas.height
+    const cycle = seconds.value * 1000;
+    const total = width * height
     const speed = Math.round(total / cycle)
     device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([new Date().getTime() * speed % total]));
 
