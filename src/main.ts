@@ -113,7 +113,10 @@ fn triangle_bin_frag(in: Varyings) -> @location(0) vec4f {
     }
 
     device.queue.writeBuffer(storageBuffer, 0, new Uint32Array([0]));
-    device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([new Date().getTime() * 128 % (canvas.width * canvas.height)]));
+    const cycle = 8 * 1000;
+    const total = canvas.width * canvas.height
+    const speed = Math.round(total / cycle)
+    device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([new Date().getTime() * speed % total]));
 
     const commandEncoder = device.createCommandEncoder();
 
